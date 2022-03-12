@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+
+
+<head>
+    <meta charset="utf-8">
+    <!-- set styles on the top -->
+    <style>
+        .chart-container {
+            max-width: 1050px;
+            /* border: 2px solid red; */
+            margin: 0 auto;
+            /* auto centers the div */
+
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            
+        }
+
+        svg {
+            /* border: 2px solid purple; */
+            overflow: visible;
+        }
+
+
+        h1 {
+            margin-left: 30px;
+        }
+
+        .x .tick line {
+            stroke: rgba(0, 0, 0, .2);
+        }
+
+        .y .tick line {
+            stroke: rgba(0, 0, 0, .2);
+        }
+
+        .x .domain {
+            display: none;
+        }
+
+        .y .domain {
+            display: none;
+        }
+
+        .y .tick text {
+            font-size: 14px;
+            fill: #333;
+        }
+
+        .x .tick text {
+            font-size: 14px;
+            fill: #333;
+        }
+
+        .x.label {
+            text-transform: uppercase;
+            font-size: 13px;
+            /* font-family: Arial, Helvetica, sans-serif; */
+            letter-spacing: .02em;
+            font-weight: 100;
+
+        }
+
+        .pop-up {
+            position: absolute; 
+            border: 1px solid black;
+            border-radius: 1px;
+            line-height: 1.2;
+            width: 200px;
+            pointer-events: none;
+            background-color: white;
+            padding: 10px;
+        }
+
+        .annotation {
+            font-size: 15px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-style: italic;
+            font-weight: 200;
+
+        }
+        /* .changg-btn{
+            margin:10px 0 0 10px;
+            width:250px;
+            height:30px;
+            cursor:pointer;
+        } */
+        .highlight{
+            text-decoration: orange;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+
+
+<body>
+    <div class="chart-container">
+        <!-- <h1 class="headline">
+            live births per woman WITH death number under age 5 per 1000 live birth, in  <span class="highlight"> Year 1950</span> 
+
+        </h1> -->
+        <h2>
+            Dealth Number Under Age 5 per 1000 Live Births in 1950
+        </h2>
+        
+        <!-- <button class='change-btn'> Switch Year 2020</button> -->
+    
+
+        <svg width="1050px" height="1000px">
+
+        </svg>
+
+
+        <div class="pop-up">
+        </div>
+
+    </div>
+    <div class="chart-container2">
+        <!-- <h1 class="headline">
+            live births per woman WITH death age < 5 per 1000 live birth, in  <span class="highlight"> Year </span> 
+
+        </h1> -->
+        <!-- <button class='change-btn'> Switch Year 2020</button> -->
+    
+
+        <svg width="1050px" height="1000px">
+
+        </svg>
+
+
+        <div class="pop-up">
+        </div>
+
+    </div>
+
+</body>
+
+<!-- add your script blocks at the end -->
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<!-- we're using d3 version 6 (the latest version) for all out work -->
+
+
+<script>
+    console.log(d3)
+    let width = 800;
+    let height = 500;
+
+    let svg = d3.select("body").select("svg");
+    let sel_val_state='fert_1950_1955';
+
+
+
+    d3.csv("dv_fp.csv").then(function (data) {
+        console.log("loaded")
+        
+
+        data.forEach(function (row) {
+            row.fert_1950_1955 = +row.fert_1950_1955
+            row.fert_2015_2020 = +row.fert_2015_2020
+            row.mort_1950_1955 = +row.mort_1950_1955
+            row.mort_2015_2020 = +row.mort_2015_2020
+            row.pop_1950_1955 = +row.pop_1950_1955
+            row.pop_2015_2020 = +row.pop_2015_2020
+            
+
+        })
+        console.log('row')
+        console.log(data)
+        let grouped_data = d3.group(data, d => d.parent_code);
+        console.log('------')
+        console.log(grouped_data)
+
+        let sel_cols = [
+            "Africa",
+            "Aisa",
+            "China",
+            "America",
+            "Oceania",
+            "Europe",
+            "US"]
+        
+        let sel_colors = [
+            "#f44336", // "Africa",
+            "#FF9800", // "Aisa",
+            "#FDD835", // "China",
+            "#5C6BC0", // "America",
+            "#26A69A", // "Oceania",
+            "#4DD0E1", // "Europe",
+            "#F06292" // "US",
+            // "#5C6BC0", // "CHIP",
+            // "#90A4AE", // "Military",
+            // "#E0E0E0"  // "Other"
+        ]
+
+        let legend_cols = [
+            "Africa",
+            "Aisa",
+            "China",
+            "America",
+            "Oceania",
+            "Europe",
+            "US"]
+        
+        let legend_colors = [
+            "#f44336", // "Africa",
+            "#FF9800", // "Aisa",
+            "#FDD835", // "China",
+            "#5C6BC0", // "America",
+            "#26A69A", // "Oceania",
+            "#4DD0E1", // "Europe",
+            "#F06292" // "US",
+            // "#5C6BC0", // "CHIP",
+            // "#90A4AE", // "Military",
+            // "#E0E0E0"  // "Other"
+        ]
+
+        let margin = { top: 0, right: 0, bottom: 10, left: 30 };
+
+        let x = d3.scaleLinear()
+            .domain(d3.extent(data.map(function (d) { return d.fert_1950_1955 })))
+            .range([margin.left, width - margin.right])
+
+        let y = d3.scaleLinear()
+            .domain(d3.extent(data.map(function (d) { return d.mort_1950_1955 })))
+            .range([height - margin.bottom, margin.top])
+
+        var r = d3.scaleSqrt()
+            .domain([0, d3.max(data, function (d) { return d.pop_1950_1955; })])
+            .range([1, 100]);
+
+        //let tickLabels = [0,1,2,3,4,5,6,7];
+
+        let yAxisSettings = d3.axisLeft(y) 
+            .tickValues([50,100,150,200,250,300,350])
+            .ticks(10) 
+            .tickSize(-width) 
+            //.tickFormat((d, i) => tickLabels[i])
+            .tickPadding(10) 
+
+        let xAxisSettings = d3.axisBottom(x)
+            .tickValues([0,1,2,3,4,5,6,7])
+            .ticks(2)
+            .tickSize(10)
+            .tickPadding(10)
+
+        let xAxisTicks = svg.append("g")
+            .attr("class", "x axis") 
+            .call(xAxisSettings)
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+        
+        let yAxisTicks = svg.append("g")
+            .attr("class", "y axis")
+            .call(yAxisSettings)
+            .attr("transform", `translate(${margin.left},-60)`)
+          
+        svg.append("text")
+            .attr("class", "x label")
+            .attr("text-anchor", "start")
+            .attr("x", margin.left)
+            .attr("y", height+50)
+            .text("← Less Babies Per Woman");
+
+        svg.append("text")
+            .attr("class", "x label")
+            .attr("text-anchor", "end")
+            .attr("x", width)
+            .attr("y", height + 50)
+            .text("More Babies Per Woman →");
+
+        let color=d3.scaleOrdinal()
+            .domain(sel_cols)
+            .range(sel_colors) 
+        
+        let colorlegend=d3.scaleOrdinal()
+            .domain(legend_cols)
+            .range(legend_colors)
+
+
+        let size=20
+
+        svg.selectAll('square')
+        .data(legend_cols)
+        .enter()
+        .append('rect')
+            .attr('x',810)
+            .attr('y',function(d,i){return 10+i*(size+5)})
+            .attr('width',size)
+            .attr('height',size)
+            .style('fill',function(d){return colorlegend(d)})
+        
+        svg.selectAll('label')
+            .data(legend_cols)
+            .enter()
+            .append('text')
+                .attr('x',820+size*1.2)
+                .attr('y',function(d,i){return 10+i*(size+5)+(size/2)})
+                .style('fill',function(d){return colorlegend(d)})
+                .text(function(d){return d})
+        
+        let shuffled = d3.shuffle(data); //trick
+
+        let zeroline = svg.append("line") 
+            .attr("x1", margin.left)
+            .attr("x2", width)
+            .attr("y1", y(3))
+            .attr("y2", y(3))
+            .style("stroke", "#333")
+            .style("stroke-width", "1")
+            .style("opacity", 1)
+
+        let points = svg.append("g")
+            .selectAll(".points")
+            .data(shuffled)
+            .join("circle")
+            .attr("class", function (d) { return "points p-" + d.parent_code }) // Give circles a class name.
+            .attr("cx", function (d) { return x(d.fert_1950_1955) }) //callback to access the data, position according to x axis
+            .attr("cy", function (d) { return y(d.mort_1950_1955) })
+            .attr("r", function (d) { return r(d.pop_1950_1955) })
+            .style("stroke", "#333333")
+            .style("stroke-width", .5)
+            .style("opacity", 1)
+            .style("fill", d=>color(d.parent_code))
+            .style("fill-opacity", .5)
+        
+        //let button=d3.select('.change-btn').on('click',update)
+        let hed=d3.select('headline')
+
+        // function update(){
+        //     if (sel_val_state=='fert_1950_1955'){
+        //         sel_val_state='fert_2015_2020'
+        //         y_val_state='mort_2015_2020'
+        //         r_val_state='pop_2015_2020'
+        //         button.html('Switch to Year 1950')
+        //         hed.html('live births per woman WITH death age < 5 per 1000 live birth, in  <span class="highlight"> Year 2020</span>')
+        //     }else{
+        //         sel_val_state='fert_1950_1955'
+        //         y_val_state='mort_1950_1955'
+        //         r_val_state='pop_1950_1955'
+        //         button.html('Switch to Year 2020')
+        //         hed.html('live births per woman WITH death age < 5 per 1000 live birth, in  <span class="highlight"> Year 1950</span>')
+        //     }
+        //     // var t=d3.transition()
+        //     //         .duration(500)
+        //             //.ease(d3.easeLinear) //website resource to change animate way to point moving
+        //     points
+        //         //.transition(t)
+        //         //.attr("class", function (d) { return "points p-" + d.parent_code }
+        //         .attr('cx',function(d){return x(d.sel_val_state)})  //since with grade change, from3->8, x and r not change, only y vlaue changed
+        //         .attr('cy',function(d){return y(d.y_val_state)})
+        //         .attr('r',function(d){return r(d.pop_2015_2020)})
+        //         .style("stroke", "#333333")
+        //         .style("stroke-width", .5)
+        //         .style("opacity", 1)
+        //         .style("fill", d=>color(d.parent_code))
+        //         .style("fill-opacity", .5)
+        //     }
+
+        let popup = d3.select(".pop-up");
+        points.on("mouseover", (event, d) => {
+
+            points
+                .style("stroke", "#333333")
+                .style("stroke-width", .5)
+                .style("fill", d=>color(d.parent_code))
+                .style("fill-opacity", .5)
+
+            svg.select(".p-" + d.country_code)
+                .style("stroke", "black")
+                .style("stroke-width", 2)
+                .style("fill", "yellow")
+                .style("fill-opacity", 1)
+                .raise()
+
+            let reScaleLang = d3.scaleThreshold()
+                .domain([0]) //make sure to put this in brackets!
+                .range(["below", "above"])
+
+            // let diff = +d.mnav3poolgcs - 3
+
+            let lang = "[Country Name] :  " + d.country_name + ";    [Babies Per Woman] :  " + d.fert_1950_1955 + " ,    [Death Under 5 Per 1000 Live Births] :  "+d.mort_1950_1955 +" ,    [Population] :  "+d.pop_1950_1955
+            // lang += d3.format(".1f")(Math.abs(diff)) + " years " + reScaleLang(diff) + " his or her grade level."
+
+            popup
+                .style("opacity", 1)
+                .style("left", (event.x - 100) + "px")
+                .style("top", (event.y - 150) + "px")
+                .html(lang)
+
+        })
+            
+
+        points.on("mouseout", (event, d) => {
+            // console.log(event)
+            points
+                .style("stroke", "#333333")
+                .style("stroke-width", .5)
+                .style("fill", d=>color(d.parent_code))
+
+            popup
+                .style("opacity", 0)
+
+        })
+
+
+    }) //end function
+
+</script>
